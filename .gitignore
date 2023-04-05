@@ -9,3 +9,5 @@ TTS
 
 # VSCode 
 .vscode
+
+.env

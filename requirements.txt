@@ -1,0 +1,16 @@
+numpy
+tqdm
+more-itertools
+transformers>=4.27.2
+ffmpeg-python==0.2.0
+click
+pyaudio
+pydub
+SpeechRecognition
+python-dotenv
+git+https://github.com/openai/whisper.git
+--extra-index-url https://download.pytorch.org/whl/cu113
+torch
+TTS # free and open source Text to Speech from Coqui/Mozilla
+sounddevice # to play an audio to a specific interface
+selenium
