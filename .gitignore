@@ -1,0 +1,11 @@
+# virtual environment
+venv 
+
+# Coqui TTS
+TTS
+
+# Python build
+**/__pycache__
+
+# VSCode 
+.vscode
