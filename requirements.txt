@@ -14,3 +14,4 @@ torch
 TTS # free and open source Text to Speech from Coqui/Mozilla
 sounddevice # to play an audio to a specific interface
 selenium
+keyboard
