@@ -7,7 +7,7 @@ import requests
 from dotenv import load_dotenv
 from pydub import AudioSegment
 
-from modules.AudioContent import AudioContent
+# from .audio_content import AudioContent
 
 load_dotenv()
 
@@ -16,10 +16,7 @@ TTS_MODEL_VITS: str = "tts_models/en/vctk/vits"
 TTS_VITS_VOICE = getenv("TTS_VITS_FEMALE_VOICE")
 
 
-i = 0
-
-
-def fetch_TTS(message: str) -> AudioContent:
+def get_tts(message: str) -> tuple[np.ndarray, int]:
     url = f"http://localhost:5002/api/tts"
     headers = {"accept": "audio/wav", "Content-Type": "application/json"}
     data = {
@@ -28,19 +25,16 @@ def fetch_TTS(message: str) -> AudioContent:
     }
     response = requests.get(url, headers=headers, params=data, stream=True)
     audioSegment: AudioSegment = AudioSegment.from_wav(io.BytesIO(response.content))
-    arr = np.ndarray(
+    audio_array = np.ndarray(
         (int(audioSegment.frame_count()), audioSegment.channels),  # type: ignore
         buffer=audioSegment.raw_data,
         dtype=np.int16,
     )  # type: ignore
-    audioContent = AudioContent(arr, audioSegment.frame_rate)  # type: ignore
-    return audioContent
+    return (audio_array, audioSegment.frame_rate)
 
 
-def TTS(message: str, model=TTS_MODEL_VITS) -> AudioContent:
-    global i
+def tts(message: str, model=TTS_MODEL_VITS) -> tuple[np.ndarray, int]:
     wavFileOutput = f'./temp/{TTS_VITS_VOICE}_{message.replace(" ", "_").replace("?","").replace("!", "")}.wav'
-    i += 1
     print("TTS message: {}".format(message))
     os.system(
         f'tts --text "{message}" --model_name {model} --speaker_idx {TTS_VITS_VOICE} --out_path {wavFileOutput} --use_cuda True'
@@ -51,5 +45,5 @@ def TTS(message: str, model=TTS_MODEL_VITS) -> AudioContent:
         buffer=audioSegment.raw_data,
         dtype=np.int16,
     )  # type: ignore
-    audioContent = AudioContent(arr, audioSegment.frame_rate)  # type: ignore
-    return audioContent
+    # audioContent = AudioContent(arr, audioSegment.frame_rate)  # type: ignore
+    return (arr, audioSegment.frame_rate)

@@ -1,8 +1,5 @@
 # virtual environment
-venv 
-
-# Coqui TTS
-TTS
+venv
 
 # Python build
 **/__pycache__
@@ -10,6 +7,8 @@ TTS
 # VSCode 
 .vscode
 
+# environment
 .env
+ngrok.yml
 
-CharacterAiWebScrap.py
+temp

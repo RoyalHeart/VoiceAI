@@ -3,15 +3,19 @@ tqdm
 more-itertools
 transformers>=4.27.2
 ffmpeg-python==0.2.0
-click
+click # command line option
 pyaudio
 pydub
 SpeechRecognition
-python-dotenv
+python-dotenv # read .env
 git+https://github.com/openai/whisper.git
---extra-index-url https://download.pytorch.org/whl/cu113
-torch
+# --extra-index-url https://download.pytorch.org/whl/cu113
+torch==1.13.1+cu116 # torch with cuda
 TTS # free and open source Text to Speech from Coqui/Mozilla
 sounddevice # to play an audio to a specific interface
-selenium
+# selenium
 keyboard
+pywin32
+googletrans==3.1.0a0 # google translator
+tk # tkinter to show text
+numba==0.58.1
