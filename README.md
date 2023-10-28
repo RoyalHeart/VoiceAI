@@ -13,7 +13,7 @@ Some use cases:
 
   [live_subtitles.webm](https://github.com/RoyalHeart/VoiceAI/assets/75922889/5abe5169-3981-4031-869d-4867c66ec83c)
 
-- # Speech to text to speech (dubbing translation)[live_subtitles.webm](https://github.com/RoyalHeart/VoiceAI/assets/75922889/5abe5169-3981-4031-869d-4867c66ec83c)
+- # Speech to text to speech (dubbing translation)
 
   Use Whisper.ai to transcribe your voice (or from an audio source) and use Coqui TTS to speak it, can also for live vocal translation
 
