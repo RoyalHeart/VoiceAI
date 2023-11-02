@@ -1,29 +1,32 @@
 # VoiceAI
 
-This project use the Whisper.ai model to transcribe audio and do multiples thing with it.
-All the translation is done through the googletrans library
+This project uses the Whisper.ai (more detail at [github.com/openai/whisper](github.com/openai/whisper)) model to transcribe audio and do multiple things with it.
+All the translation is done through the [googletrans](https://pypi.org/project/googletrans/) library.
+The program also uses [Tkinter](https://docs.python.org/3/library/tkinter.html) to show the subtitles on the screen.
+To play the translated audio, a local [Coqui TTS](https://github.com/coqui-ai/TTS) server is set up to receive text and output audio file.
+The [VB Audio cable software](https://vb-audio.com/Cable/) is also used to make the output of the device into an input source.
 
-Some use cases:
+# Some use cases:
 
-- # Live subtitles
+- ## Live subtitles
 
-  Transcibed audio will be translated into desired target language and show on screen with Tkinter.
+  Transcribed audio will be translated into the desired target language and shown on screen with Tkinter.
 
-  ## Demo
+  ### Demo
 
   [live_subtitles.webm](https://github.com/RoyalHeart/VoiceAI/assets/75922889/5abe5169-3981-4031-869d-4867c66ec83c)
 
-- # Speech to text to speech (dubbing translation)
+- ## Speech to text to speech (dubbing with translation)
 
-  Use Whisper.ai to transcribe your voice (or from an audio source) and use Coqui TTS to speak it, can also for live vocal translation
+  Use Whisper.ai to transcribe your voice (or from an audio source) and use Coqui TTS to speak it. This works as a live vocal translation
 
 ## How to run
 
-Make sure to have all the library installed and then just run the main.py file with the correct flags
+Make sure to have all the libraries installed and then just run the main.py file with the correct flags
 
 If you use Windows, then you can try to make a batch file like the main.bat to activate a virtual environment and run the code
 
-Some flags are useful such as --save_files because it store the audio files temporarily and transcribe one by one
+Some flags are useful such as --save_files because it stores the audio files temporarily and transcribes them one by one
 
 ### Run the live subtitles
 
@@ -35,26 +38,31 @@ python main.py --save_file --subtitles
 
 ### Run the dubbing translation
 
-To run this feature, first run the TTS server:
+To run this feature, first run the TTS server, all the installation and setup can be found at [https://github.com/coqui-ai/TTS](https://github.com/coqui-ai/TTS):
 
 ```shell
 tts-server --model_name "tts_models/en/vctk/vits" --use_cuda True
 ```
 
-The models and gpu enabled are up to you.
-This config works for me so I use it.
+The models and the GPU option are up to you.
+This config uses the GPU and the English model vits.
 
-After the TTS server is running local host, run this command to run the live dubbing feature
+After the TTS server is running in the localhost, run this command to run the live dubbing feature
 
 ```shell
 python main.py --save_file --dubbing
 ```
 
-## Improvements
+# Improvements
 
 Some enhancements can be made such as:
 
-- Use a better translation service such as DeepL for more natural translation
+- Use a better translation service such as DeepL for more natural translations
 - Use native win32api to show text better
-- Improve the threading to be more efficiently
-- Try different thresholds for record, show subtitles,...
+- Improve the threading, multiprocesses to run efficiently
+- Try different thresholds for recording, and the interval for showing subtitles,...
+
+# This project is inspired by these similar projects
+
+- [A real-time translator by SociallyIneptWeeb](https://github.com/SociallyIneptWeeb/LanguageLeapAI)
+- [Whisper mic](https://github.com/mallorbc/whisper_mic)
