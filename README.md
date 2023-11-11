@@ -14,7 +14,9 @@ The [VB Audio cable software](https://vb-audio.com/Cable/) is also used to make 
 
   ### Demo
 
-  [live_subtitles.webm](https://github.com/RoyalHeart/VoiceAI/assets/75922889/5abe5169-3981-4031-869d-4867c66ec83c)
+  [live_subtitles.webm](https://github.com/RoyalHeart/VoiceAI/assets/75922889/95bf569d-1ebd-48cf-bf13-89530f0895ae)
+
+
 
 - ## Speech to text to speech (dubbing with translation)
 
