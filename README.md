@@ -1,4 +1,9 @@
 # VoiceAI
+<!--[VoiceAI](https://github.com/RoyalHeart/VoiceAI/assets/75922889/a37417e6-1d3a-4ab0-a1fb-a3806d213f86)-->
+<h1 align="center">
+  <img src="https://github.com/RoyalHeart/VoiceAI/assets/75922889/a37417e6-1d3a-4ab0-a1fb-a3806d213f86" alt="VoiceAI" width="100"/>
+</h1>
+
 
 This project uses the Whisper.ai (more detail at [github.com/openai/whisper](github.com/openai/whisper)) model to transcribe audio and do multiple things with it.
 All the translation is done through the [googletrans](https://pypi.org/project/googletrans/) library.
