@@ -6,6 +6,7 @@ from threading import Thread
 
 import click
 import numpy as np
+import sounddevice
 import speech_recognition as sr
 import torch
 from pydub import AudioSegment
@@ -94,18 +95,24 @@ def main(
     if model != "large" and english:
         model = model + ".en"
     print("Load model...")
-    print(torch.cuda.is_available())
+    print("Has CUDA:", torch.cuda.is_available())
     # devices = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     audio_model = load_model(model)
     audio_queue = Queue()
     result_queue = Queue()
     translation_queue = Queue()
     threads = []
-    print("Start recording thread...")
+    # print(sounddevice.query_devices())
+    result = sr.Microphone.list_working_microphones()
+    for i in result:
+        print(i, result[i])
+    device_index = int(input("Please choose an input source for audio:"))
+    print(device_index)
     record_process = Thread(
         target=record_audio,
         args=(
             audio_queue,
+            device_index,
             energy,
             pause,
             dynamic_energy,
@@ -115,7 +122,6 @@ def main(
         ),
     )
     threads.append(record_process)
-    print("Start transcribing thread...")
     transcribing_process = Thread(
         target=transcribe_forever,
         args=(
@@ -128,14 +134,12 @@ def main(
         ),
     )
     threads.append(transcribing_process)
-    print("Start translating thread...")
     translating_process = Thread(
         target=translate,
-        args=(result_queue, translation_queue, dest),
+        args=(result_queue, translation_queue),
     )
     threads.append(translating_process)
     if dubbing:
-        print("Start audio thread...")
         output_audio_process = Thread(
             target=play_translated_audio, args=([translation_queue])
         )
@@ -147,8 +151,16 @@ def main(
 
 
 def record_audio(
-    audio_queue, energy, pause, dynamic_energy, save_file, temp_dir, record_timeout
+    audio_queue,
+    device,
+    energy,
+    pause,
+    dynamic_energy,
+    save_file,
+    temp_dir,
+    record_timeout,
 ):
+    print("Start recording thread...")
     # load the speech recognizer and set the initial energy threshold and pause threshold
     r = sr.Recognizer()
     r.energy_threshold = energy
@@ -156,11 +168,10 @@ def record_audio(
     r.dynamic_energy_threshold = dynamic_energy
     r.operation_timeout = record_timeout
     # r.non_speaking_duration = 0.05
-
-    with sr.Microphone(device_index=1) as source:
+    with sr.Microphone(device_index=device) as source:
         # print("Adjusting for ambient noise...")
         # r.adjust_for_ambient_noise(source, duration=5)
-        print("Finish adjusting")
+        # print("Finish adjusting")
         i = 0
         while True:
             # get and save audio to wav file
@@ -184,11 +195,13 @@ def record_audio(
             print("Audio recored")
             audio_queue.put_nowait(audio_data)
             i += 1
+    print("fail")
 
 
 def transcribe_forever(
     audio_queue, result_queue, audio_model: Whisper, english, verbose, save_file
 ):
+    print("Start transcribing thread...")
     while True:
         audio_data = audio_queue.get()
         print("Transcribing...")
@@ -207,6 +220,7 @@ def transcribe_forever(
 
 
 def play_translated_audio(translation_queue):
+    print("Start audio thread...")
     while True:
         output = translation_queue.get()
         translation_queue.put(output)
