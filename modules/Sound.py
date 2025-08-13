@@ -12,6 +12,8 @@ def play_to_output(audio, frame_rate, deviceId=8):
     # sounddevice.wait()
 
 
+# print(sounddevice.query_devices())
+
 # if __name__ == "__main__":
 #     try:
 #         print(sounddevice.query_devices())

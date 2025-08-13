@@ -1,33 +1,24 @@
-import random
 import signal
 import sys
 import textwrap
-import threading
-import time
 import tkinter as tk
 from os import getenv
-from queue import Queue
 
-import pywintypes
-import win32api
-import win32con
 from dotenv import load_dotenv
-from googletrans import Translator
-
-translator = Translator()
-# from modules.audio_translate import translate_audio
 
 load_dotenv()
-
-OFFSET_X = 0
-OFFSET_Y = 0.7
+WIDTH_RATIO = 0.5
+HEIGHT_RATIO = 0.2
+OFFSET_X_RATIO = round((1 - WIDTH_RATIO) / 2, 2)
+OFFSET_Y_RATIO = 0.6
 SUBTITLE_FONT_SIZE = int(getenv("SUBTITLE_FONT_SIZE"))
 SUBTITLE_COLOR = getenv("SUBTITLE_COLOR")
 SUBTITLE_BG_COLOR = getenv("SUBTITLE_BG_COLOR")
 SACRIFICIAL_COLOR = getenv("SACRIFICIAL_COLOR")
+WRAP_SIZE = 100 / (SUBTITLE_FONT_SIZE * 0.1)
 
 
-def subtitle_updater(root: tk.Tk, queue, labels: [tk.Label]):
+def subtitle_updater(root: tk.Tk, queue, labels: list[tk.Label]):
     # Check if there is something new in the queue to display.
     while not queue.empty():
         # destroy old label since new message inbound
@@ -35,71 +26,94 @@ def subtitle_updater(root: tk.Tk, queue, labels: [tk.Label]):
         # old_label.destroy()
         if root.wm_state() == "withdrawn":
             # show root window
-            root.deiconify()
+            None
+            # root.deiconify()
 
         # create subtitle based on message in queue
-        msg = queue.get()["format_text"]
+        msg_data = queue.get()
+        if (
+            isinstance(msg_data, dict)
+            and "origin" in msg_data
+            and "translation_format" in msg_data
+        ):
+            orig = textwrap.fill(str(msg_data["origin"]), WRAP_SIZE)
+            translation = msg_data["translation_format"]
+            display_text = orig
+            if translation != "":
+                trans = textwrap.fill(str(translation), WRAP_SIZE)
+                display_text = f"{orig}\n{trans}"
+        else:
+            display_text = textwrap.fill(
+                str(msg_data.get("origin", msg_data)), WRAP_SIZE
+            )
         new_label = tk.Label(
-            text=textwrap.fill(f"{msg}", 64),
-            font=("Comic Sans MS", SUBTITLE_FONT_SIZE, "bold italic"),
+            text=display_text,
+            font=("Comic Sans MS", SUBTITLE_FONT_SIZE, "bold"),
             fg=SUBTITLE_COLOR,
             bg=SUBTITLE_BG_COLOR,
+            justify=tk.LEFT,
+            anchor=tk.W,
+            padx=10,
         )
-        # hide root and destroy label after 3s
-        label_time = 4000
-        old_label.after(label_time, old_label.destroy)
-        new_label.after(label_time, new_label.destroy)
-        new_label.after(label_time, root.withdraw)
+        # hide root and destroy label after 5s
+        label_time_ms = 5 * 1000
+        old_label.after(label_time_ms, old_label.destroy)
+        new_label.after(label_time_ms, new_label.destroy)
+        # new_label.after(label_time, root.withdraw)
 
-        # place subtitle at bottom middle of screen
-        new_label.pack(side="top", anchor="n")
-        # hWindow = pywintypes.HANDLE(int(old_label.master.frame(), 16))
-        # # http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-        # # The WS_EX_TRANSPARENT flag makes events (like mouse clicks) fall through the window.
-        # exStyle = (
-        #     win32con.WS_EX_COMPOSITED
-        #     | win32con.WS_EX_LAYERED
-        #     | win32con.WS_EX_NOACTIVATE
-        #     | win32con.WS_EX_TOPMOST
-        #     | win32con.WS_EX_TRANSPARENT
-        # )
-        # win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
-        # hWindow = pywintypes.HANDLE(int(new_label.master.frame(), 16))
-        # http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-        # The WS_EX_TRANSPARENT flag makes events (like mouse clicks) fall through the window.
-        # exStyle = (
-        #     win32con.WS_EX_COMPOSITED
-        #     | win32con.WS_EX_LAYERED
-        #     | win32con.WS_EX_NOACTIVATE
-        #     | win32con.WS_EX_TOPMOST
-        #     | win32con.WS_EX_TRANSPARENT
-        # )
-        # win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
+        # place subtitle at top middle of screen
+        new_label.pack(side="top", anchor="n", fill=tk.X, expand=True)
         labels.append(new_label)
         root.update_idletasks()
 
-    # run_interval = 50 # run every 0.05s
-    run_interval = 50
+    run_interval = 100  # run every 0.1s
     root.after(run_interval, lambda: subtitle_updater(root, queue, labels))
+
+
+x, y = 0, 0
 
 
 def setup_overlay():
     # set tkinter gui to be topmost without window
     root = tk.Tk()
     root.overrideredirect(True)
-    root.geometry(
-        f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+{OFFSET_X}+{round(root.winfo_screenheight()*OFFSET_Y)}"
-    )
+    WIDTH = round(root.winfo_screenwidth() * WIDTH_RATIO)
+    HEIGHT = round(root.winfo_screenheight() * HEIGHT_RATIO)
+    OFFSET_X = round(root.winfo_screenwidth() * OFFSET_X_RATIO)
+    OFFSET_Y = round(root.winfo_screenheight() * OFFSET_Y_RATIO)
+    root.geometry(f"{WIDTH}x{HEIGHT}+{OFFSET_X}+{OFFSET_Y}")
+
+    def move(event):
+        global x, y
+        deltax = event.x - x
+        deltay = event.y - y
+        new_x = root.winfo_x() + deltax
+        new_y = root.winfo_y() + deltay
+        root.geometry(f"+{new_x}+{new_y}")
+
+    def start_move(event):
+        global x, y
+        x = event.x
+        y = event.y
+
+    root.bind("<ButtonPress-1>", start_move)
+    root.bind("<B1-Motion>", move)
     root.lift()
     root.wm_attributes("-topmost", True)
-    root.wm_attributes("-disabled", True)
+    root.wm_attributes("-alpha", 0.7)
+
+    # root.wm_attributes("-disabled", True) # disable the window, can not move window
 
     # Sacrifice random color for transparency
-    root.wm_attributes("-transparentcolor", SACRIFICIAL_COLOR)
+    # root.wm_attributes("-transparentcolor", SACRIFICIAL_COLOR)
     root.config(bg=SACRIFICIAL_COLOR)
 
+    # root.config(bg="black")
+
     # hide initial window
-    root.withdraw()
+    # root.withdraw()
+    # root.deiconify()
+    # root.iconify()
 
     return root
 
@@ -110,6 +124,7 @@ def close_app(*_):
 
 
 def start_app(subtitle_queue):
+    print("Start showing subtitles...")
     # catch keyboard interrupt to stop main thread
     signal.signal(signal.SIGINT, close_app)
 

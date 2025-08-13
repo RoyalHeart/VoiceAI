@@ -1,6 +1,7 @@
 import io
 import os
 import tempfile
+import time
 from queue import Queue
 from threading import Thread
 
@@ -17,15 +18,13 @@ from modules.sound import play_to_output
 from modules.tkinter_text import start_app
 from modules.translate import translate
 
-# from time import sleep
-
 
 @click.command()
 @click.option(
     "--model",
     default="base",
     help="Model to use",
-    type=click.Choice(["tiny", "base", "small", "medium", "large"]),
+    type=click.Choice(["tiny", "base", "small", "turbo", "medium", "large"]),
 )
 @click.option(
     "--english",
@@ -72,7 +71,7 @@ from modules.translate import translate
     "--dest",
     default="en",
     help="Translation target language",
-    type=click.Choice(["en", "vi", "ja", "ko"]),
+    type=click.Choice(["en", "vi", "ja", "ko", "de"]),
 )
 @click.option(
     "--save_file", default=False, help="Flag to save file", is_flag=True, type=bool
@@ -94,7 +93,7 @@ def main(
     # there are no english models for large
     if model != "large" and english:
         model = model + ".en"
-    print("Load model...")
+    print("Loading model...")
     print("Has CUDA:", torch.cuda.is_available())
     # devices = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     audio_model = load_model(model)
@@ -102,12 +101,12 @@ def main(
     result_queue = Queue()
     translation_queue = Queue()
     threads = []
-    # print(sounddevice.query_devices())
     result = sr.Microphone.list_working_microphones()
+    if result == {}:
+        print(sounddevice.query_devices())
     for i in result:
         print(i, result[i])
-    device_index = int(input("Please choose an input source for audio:"))
-    print(device_index)
+    device_index = int(input("Please choose an input source for audio: "))
     record_process = Thread(
         target=record_audio,
         args=(
@@ -119,6 +118,7 @@ def main(
             save_file,
             temp_dir,
             record_timeout,
+            verbose,
         ),
     )
     threads.append(record_process)
@@ -136,12 +136,12 @@ def main(
     threads.append(transcribing_process)
     translating_process = Thread(
         target=translate,
-        args=(result_queue, translation_queue),
+        args=(result_queue, translation_queue, dest),
     )
     threads.append(translating_process)
     if dubbing:
         output_audio_process = Thread(
-            target=play_translated_audio, args=([translation_queue])
+            target=play_translated_audio, args=([translation_queue], verbose)
         )
         threads.append(output_audio_process)
     for t in threads:
@@ -159,6 +159,7 @@ def record_audio(
     save_file,
     temp_dir,
     record_timeout,
+    verbose,
 ):
     print("Start recording thread...")
     # load the speech recognizer and set the initial energy threshold and pause threshold
@@ -175,13 +176,15 @@ def record_audio(
         i = 0
         while True:
             # get and save audio to wav file
-            print("Listening...")
+            if verbose:
+                print("Listening...")
             audio = r.listen(source, phrase_time_limit=record_timeout)
             if save_file:
                 data = io.BytesIO(audio.get_wav_data())
                 audio_clip = AudioSegment.from_file(data)
                 filename = os.path.join(temp_dir, f"temp{i}.wav")
-                print(filename)
+                if verbose:
+                    print(filename)
                 audio_clip.export(filename, format="wav")
                 audio_data = filename
             else:
@@ -192,10 +195,10 @@ def record_audio(
                     / 32768.0
                 )
                 audio_data = torch_audio
-            print("Audio recored")
+            if verbose:
+                print("Audio recored")
             audio_queue.put_nowait(audio_data)
             i += 1
-    print("fail")
 
 
 def transcribe_forever(
@@ -204,32 +207,36 @@ def transcribe_forever(
     print("Start transcribing thread...")
     while True:
         audio_data = audio_queue.get()
-        print("Transcribing...")
+        if verbose:
+            print("Transcribing...")
+        start = time.time()
         if english:
             result = audio_model.transcribe(
                 audio_data, no_speech_threshold=0.5, language="english"
             )
         else:
             result = audio_model.transcribe(audio_data, no_speech_threshold=0.5)
-        predicted_text = result["text"]
+        predicted_text = result["text"].strip()
         result_queue.put_nowait(predicted_text)
         if verbose:
             print(result)
-        if save_file:
-            os.remove(audio_data)
+            print("Took", time.time() - start)
+        # if save_file:
+        # os.remove(audio_data)
 
 
-def play_translated_audio(translation_queue):
+def play_translated_audio(translation_queue, verbose):
     print("Start audio thread...")
     while True:
         output = translation_queue.get()
         translation_queue.put(output)
         output_sentence = output["text"]
-        print("You say:", output_sentence)
+        if verbose:
+            print("You say:", output_sentence)
         if output_sentence != "":
             audio, frame_rate = get_tts(output_sentence)
             play_to_output(audio, frame_rate)
 
 
-# if __name__ == "__main__":
-main()
+if __name__ == "__main__":
+    main()

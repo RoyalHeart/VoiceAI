@@ -7,17 +7,16 @@ import requests
 from dotenv import load_dotenv
 from pydub import AudioSegment
 
-# from .audio_content import AudioContent
-
 load_dotenv()
 
 TTS_MODEL_TACOTRON2: str = "tts_models/en/ljspeech/tacotron2-DDC"
 TTS_MODEL_VITS: str = "tts_models/en/vctk/vits"
 TTS_VITS_VOICE = getenv("TTS_VITS_FEMALE_VOICE")
+TTS_HOST = getenv("TTS_HOST", "http://localhost:5002/api/tts")
 
 
 def get_tts(message: str) -> tuple[np.ndarray, int]:
-    url = f"http://localhost:5002/api/tts"
+    url = TTS_HOST
     headers = {"accept": "audio/wav", "Content-Type": "application/json"}
     data = {
         "text": message,
